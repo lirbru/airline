@@ -1,0 +1,222 @@
+drop table if exists Airline_Companies;
+drop table if exists Flights;
+drop table if exists Countries;
+drop table if exists Tickets;
+drop table if exists Customers;
+drop table if exists Users;
+drop table if exists User_Roles;
+drop table if exists Adminstrators;
+
+
+create table Airline_Companies (
+ 	Id serial primary key,
+	Name text unique,
+	Country_Id int ,
+	User_Id bigint unique
+);
+
+create table Flights (
+	Id serial primary key,
+	Airline_Company_Id bigint,
+	Origin_Country_Id int,
+	Destination_Country_Id int,
+	Departure_Time timestamp,
+	Landing_Time timestamp,
+	Remaining_Tickets int
+);
+
+create table Countries(
+	Id serial primary key,
+	Name text unique
+);
+
+create table Tickets(
+	Id serial primary key,
+	Flight_Id bigint,
+	Customer_Id bigint
+);
+
+create table Customers(
+	Id serial primary key,
+	First_Name text,
+	Last_Name text,
+	Address text,
+	Phone_No text unique,
+	Credit_Card text unique,
+	User_Id bigint unique
+);
+
+create table Users(
+	Id serial primary key,
+	Username text unique,
+	User_Password text,
+	Email text unique,
+	User_Role int
+);
+
+create table User_Roles(
+	Id serial primary key,
+	Role_Name text unique
+);
+
+create table Adminstrators(
+	Id serial primary key,
+	First_Name text,
+	Last_Name text,
+	User_Id bigint unique
+);
+
+
+//////functions
+
+
+drop function if exists get_customer_by_username;
+create or replace function get_customer_by_username(username_to_find text)
+returns table(First_Name text, Last_Name text,Address text, Phone_No text, Credit_Card_No text)
+language plpgsql
+as $$
+begin
+select * from Customers
+where User_Id = (select Id from Users where Username = username_to_find );
+end;
+$$;
+
+drop function if exists get_airline_by_username;
+create or replace function get_airline_by_username(username_to_find text)
+returns table (Name text, Country_Id int)
+language plpgsql
+as $$
+begin
+select * from Airline_Companies
+where User_Id = (select Id from Users where Username = username_to_find );
+end;
+$$;
+
+drop function if exists get_user_by_username(username_to_find text);
+create or replace function get_user_by_username(username_to_find text)
+returns table (Username text, User_Password text, Email text, User_Role int)
+language plpgsql
+as $$
+begin
+select * from Users where Id = users_name_to_find ;
+end;
+$$;
+
+drop function if exists get_flights_by_parameters(origin_counry_id int, destination_country_id int,dep_date timestamp);
+create or replace function get_flights_by_parameters(origin_counry_id int, detination_country_id int, dep_date timestamp)
+returns table (Id int,Airline_Company_Id bigint)
+language plpgsql
+as $$
+begin
+select * from Flights 
+where origin_country_id = Origin_Country_Id and destination_country_id = Destenation_Country_Id 
+	and dep_date = Departure_Time;
+end;
+$$;
+
+
+drop function if exists get_flights_by_airline_id(airline_id bigint);
+create function get_flights_by_airline_id(airline_id bigint)
+returns table ("Id" int, "Airline_Company_Id" bigint, "Origin_Country_Id" int, "Destination_Country_Id" int,
+			  "Departure_Time" timestamp, "Landing_Time" timestamp, "Remaining_Tickets" int)
+language plpgsql
+as $$
+begin
+	return query select * from Flights
+	where airline_id = Flights.airline_Company_Id;
+end;
+$$;
+
+-----
+ create or replace function get_arrival_flights(_id int)
+ returns table (id integer, airline_company bigint, origin_country_id int, destination_country_id int, departure_time timestamp, 
+				landing_time timestamp, remainig_tickets int)
+ language plpgsql
+ as $$
+ begin
+ 	return query select * from Flights
+	where  flights.Destination_Country_Id = _id
+		and flights.departure_Time between (now()) and (now() + '12 hour'::interval);
+ 	
+end;
+ $$;
+-----
+ create or replace function get_departure_flights(_id int)
+ returns table (id integer, airline_company bigint, origin_country_id int, destination_country_id int, departure_time timestamp, 
+				landing_time timestamp, remainig_tickets int)
+ language plpgsql
+ as $$
+ begin
+ 	return query select * from Flights
+	where  flights.origin_Country_Id = _id
+		and flights.departure_Time between (now()) and (now() + '12 hour'::interval);
+ 	
+		end;
+ $$;
+
+----
+
+drop function if exists get_tickets_by_customer(_id int);
+ create or replace function  get_tickets_by_customer(_id int)
+ returns table (id integer, flight_id bigint, customer_id bigint)
+ language plpgsql
+ as $$
+ begin
+ 	return query select * from tickets
+	where  tickets.customer_id = _id;
+ 	
+		end;
+ $$;
+-----
+
+--drop function if exists get_arrival_flights(country_id int);
+-- create function get_arrival_flights(country_id int)
+-- returns table (Id bigint, Airline_Company_Id bigint, Origin_Country_Id int, Destination_Country_Id int,
+-- 			  Departure_Time timestamp, Landing_Time timestamp, Remaining_Tickets int)
+-- language plpgsql
+-- as $$
+-- begin
+-- 	return  query select from flights
+-- 	flight."id", flight."Airline_Company_Id", flight."Origin_Country_Id", flight.Destination_Country_Id,
+-- 			  flight.Departure_Time, flight.Landing_Time, flight.Remaining_Tickets
+-- 	from Flights join airline_companies
+-- 	on flights.airline_company_id = airline_companies.id
+-- 	where airline_companies.country_id = flights.Destination_Country_Id 
+-- 		and flights.Landing_Time between (now()) and (now() + '12 hour'::interval);
+-- end;
+-- $$;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
